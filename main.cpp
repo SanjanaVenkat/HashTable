@@ -2,7 +2,6 @@
 //5.26.19
 //Hash table
 #include <iostream>
-#include <vector>
 #include <iomanip>
 #include <cstring>
 
@@ -18,9 +17,7 @@ struct Student {
 };
 
 //voids for three main functions of studentlist
-void printStudents(struct Student);
 Student** addStudent(int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash);
-void deleteStudent(struct Student);
 Student** addtoHash(Student* student, int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash); 
 int getHashIndex(int id, int hashsize);
 void printHash(int hashsize, Student** studenthash);
@@ -28,9 +25,8 @@ Student** doubleHash(int & hashsize, int newhashsize, Student** studenthash, Stu
 void addtoNewHash(Student* current, int hashsize, int newhashsize, Student** studenthash, Student** newstudenthash);
 void initializeNewHash(int hashsize, int newhashsize, Student** studenthash, Student** newstudenthash);
 void initializeHash(int hashsize, Student** studenthash);
-
-//vector to hold structs of different students
-vector<Student*>* studentlist;
+Student** deleteStudent(int hashsize, Student** studenthash);
+Student** removefromHash(int studentid, int hashsize, Student** studenthash);
 
 void initializeNewHash(int hashsize, int newhashsize, Student** studenthash, Student** newstudenthash) {
   for (int i = 0; i < newhashsize; i++) {
@@ -102,41 +98,6 @@ Student** addStudent(int & hashsize, Student** studenthash, int newhashsize, Stu
  return studenthash;
 }
 
-//function to print students
-//prints out all students stored in studentlist
-void printStudents(vector <Student*>* studentlist) {
-  for (int i = 0; i < studentlist->size(); i++) {
-    Student* s = (*studentlist)[i];
-    cout << s->firstname << " " << s->lastname << ", " << s->id << ", " << setprecision(3) << s->gpa <<endl;
-  }
-}
-
-//function to delete a student
-//prompts user to enter student id for student to delete
-//deletes all data relating to student based on id
-void deleteStudent(vector <Student*>* studentlist) {
-  int studentid;
-  int index;
-  bool idexists = false;
-  cout << "Enter student id" << endl;
-  cin >> studentid;
-   for (int i = 0; i < studentlist->size(); i++) {
-    Student* s = (*studentlist)[i];
-    if (s->id == studentid) {
-      index = i;
-      idexists = true;
-      break;
-    }
-  }
-   if (idexists == true) {
-   studentlist->erase(studentlist->begin()+index);
-   cout << "Deleted student" << endl;
-   }
-   //if id doesn't exist in student list, returns this message
-   else {
-     cout << "ID doesn't exist in student list" << endl;
-   }
-}
 
 Student** doubleHash(int & hashsize, int newhashsize, Student** studenthash, Student** newstudenthash) {
   newhashsize = hashsize * 2;
@@ -169,6 +130,38 @@ void printHash(int hashsize, Student** studenthash) {
   }
 }
 
+Student** deleteStudent(int hashsize, Student** studenthash) {
+  int studentid;
+  cout << "Enter the id of the student that you want to delete" << endl;
+  cin >> studentid;
+  studenthash = removefromHash(studentid, hashsize, studenthash);
+  return studenthash;
+}
+
+Student** removefromHash(int studentid, int hashsize, Student** studenthash) {
+  int index = getHashIndex(studentid, hashsize);
+  if (studenthash[index] == NULL) {
+    return studenthash;
+  }
+  Student* current = studenthash[index];
+  Student* prev = NULL;
+  while (current != NULL) {
+    if (current->id == studentid) {
+      if (prev != NULL) {
+	prev->next = current->next;
+      }
+      else {
+	studenthash[index] = current->next;
+      }
+      delete current;
+      break;
+    }
+    prev = current;
+    current = current->next;
+  }
+  return studenthash;
+}
+
 //reads in response of user
 void getResponse(char response[10]) {
   bool running = true;
@@ -178,7 +171,6 @@ void getResponse(char response[10]) {
 }
 
 int main() {
-  vector <Student*>* studentlist = new vector<Student*>();
 char response[100];
  bool running = true;
  int hashsize = 100;
@@ -199,9 +191,8 @@ char response[100];
       getResponse(response);
            }
      else  if (strcmp(response, "DELETE") == 0) {
-      deleteStudent(studentlist);
-      getResponse(response);
-      
+       studenthash = deleteStudent(hashsize, studenthash);
+       getResponse(response);
       }
     else if (strcmp(response, "QUIT") == 0) {
       cout << "Quitting" << endl;
