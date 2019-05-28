@@ -4,6 +4,9 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -27,6 +30,7 @@ void initializeNewHash(int hashsize, int newhashsize, Student** studenthash, Stu
 void initializeHash(int hashsize, Student** studenthash);
 Student** deleteStudent(int hashsize, Student** studenthash);
 Student** removefromHash(int studentid, int hashsize, Student** studenthash);
+Student** addRandom(int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash, int & randomid);
 
 void initializeNewHash(int hashsize, int newhashsize, Student** studenthash, Student** newstudenthash) {
   for (int i = 0; i < newhashsize; i++) {
@@ -70,8 +74,8 @@ Student** addtoHash(Student* student, int & hashsize, Student** studenthash, int
     }
     current->next = student;
   }
-  if (collisions > 2) {
-    //    cout << "Doubling hash" << endl;
+  if (collisions >= 3) {
+    cout << "Doubling number of slots" << endl;
     studenthash = doubleHash(hashsize, newhashsize, studenthash, newstudenthash);
   }
   return studenthash;
@@ -96,6 +100,43 @@ Student** addStudent(int & hashsize, Student** studenthash, int newhashsize, Stu
   cin >> student->gpa;
  studenthash = addtoHash(student, hashsize, studenthash, newhashsize, newstudenthash);
  return studenthash;
+}
+
+Student** addRandom(int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash, int & randomid) {
+  int studentnum;
+  cout << "How many students do you want to add?" << endl;
+  cin >> studentnum;
+  int counter = 0;
+  char fileFirst[1000];
+  char fileLast[1000];
+  int numFirst;
+  int numLast;
+  int randomF;
+  int randomL;
+  float randomGPA;
+  srand(time(NULL));
+  cout << "How many first names are in your first name file?" << endl;
+  cin >> numFirst;
+  cout << "How many last names are in your last name file?" << endl;
+  cin >> numLast;
+  cout << "What is the name of your first name file?" << endl;
+  cin >> fileFirst;
+  cout << "What is the name of your last name file?" << endl;
+  cin >> fileLast[1000];
+  while (studentnum > counter) {
+    randomF = rand() % numFirst;
+    randomL = rand() % numLast;
+    Student* student = new Student();
+    randomGPA = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/4.5));
+    student->gpa = randomGPA;
+    student->id = randomid;
+    char testname [1000] = "test";
+    strcpy(student->firstname, testname);
+    strcpy(student->lastname, testname);
+    studenthash = addtoHash(student, hashsize, studenthash, newhashsize, newstudenthash);
+    randomid++;
+    counter++;
+  }
 }
 
 
@@ -165,7 +206,7 @@ Student** removefromHash(int studentid, int hashsize, Student** studenthash) {
 //reads in response of user
 void getResponse(char response[10]) {
   bool running = true;
-  cout << "Enter ADD, PRINT, DELETE, or QUIT" << endl;
+  cout << "Enter ADD, RANDOM, PRINT, DELETE, or QUIT" << endl;
   cin >> response;
   running == true;
 }
@@ -177,6 +218,7 @@ char response[100];
  int newhashsize;
  Student** studenthash;
  Student** newstudenthash;
+ int randomid = 100000;
  studenthash = new Student*[hashsize];
  initializeHash(hashsize, studenthash);
  getResponse(response);
@@ -190,12 +232,15 @@ char response[100];
        printHash(hashsize, studenthash);
       getResponse(response);
            }
+    else if (strcmp(response, "RANDOM") == 0) {
+      studenthash = addRandom(hashsize, studenthash, newhashsize, newstudenthash, randomid);
+      getResponse(response);
+    }
      else  if (strcmp(response, "DELETE") == 0) {
        studenthash = deleteStudent(hashsize, studenthash);
        getResponse(response);
       }
     else if (strcmp(response, "QUIT") == 0) {
-      cout << "Quitting" << endl;
 	return 0;
       }
     else {
