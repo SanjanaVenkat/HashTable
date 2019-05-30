@@ -7,10 +7,11 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fstream>
 
 using namespace std;
 
-//struct for student, holds their full name, student id, and gpa
+//struct for student, holds their full name, student id, gpa, and next pointer
 struct Student {
   char firstname[1000];
   char lastname[1000];
@@ -19,7 +20,7 @@ struct Student {
   Student* next;
 };
 
-//voids for three main functions of studentlist
+//functions
 Student** addStudent(int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash);
 Student** addtoHash(Student* student, int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash); 
 int getHashIndex(int id, int hashsize);
@@ -32,12 +33,14 @@ Student** deleteStudent(int hashsize, Student** studenthash);
 Student** removefromHash(int studentid, int hashsize, Student** studenthash);
 Student** addRandom(int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash, int & randomid);
 
+//initializes memory for new hash table
 void initializeNewHash(int hashsize, int newhashsize, Student** studenthash, Student** newstudenthash) {
   for (int i = 0; i < newhashsize; i++) {
     newstudenthash[i] = NULL;
   }
 }
 
+//adds to the new hash that has larger size  (temporary holding)
 void addtoNewHash(Student* current, int hashsize, int newhashsize, Student** studenthash, Student** newstudenthash) {
   int index = getHashIndex(current->id, newhashsize);
   if (newstudenthash[index] == NULL) {
@@ -52,18 +55,21 @@ void addtoNewHash(Student* current, int hashsize, int newhashsize, Student** stu
   }
 }
 
-
+//gets index for student, is the remainder of id divided by hashsize
 int getHashIndex(int id, int hashsize) {
   int index = id % hashsize;
   return index;
 }
 
+//adds a student to original hash
 Student** addtoHash(Student* student, int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash) {
     int index = getHashIndex(student->id, hashsize);
     int collisions = 0;
+    //first of linked list for a slot
   if (studenthash[index] == NULL) {
       studenthash[index] = student;
     }
+  //adds to existing linked list of a slot
   else {
     //cout << "Else" << endl;
     Student* current = studenthash[index];
@@ -74,6 +80,7 @@ Student** addtoHash(Student* student, int & hashsize, Student** studenthash, int
     }
     current->next = student;
   }
+  //more than 3 collisions, need to double the number of slots
   if (collisions >= 3) {
     cout << "Doubling number of slots" << endl;
     studenthash = doubleHash(hashsize, newhashsize, studenthash, newstudenthash);
@@ -81,13 +88,14 @@ Student** addtoHash(Student* student, int & hashsize, Student** studenthash, int
   return studenthash;
 }
 
+//initializes memory for original hash
 void initializeHash(int hashsize, Student** studenthash) {
   for (int i = 0; i < hashsize; i++) {
     studenthash[i] = NULL;
   }
 }
 
-
+//asks user to enter information for a student that they want to enter
 Student** addStudent(int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash) {
   Student* student = new Student();
   cout << "Enter student first name" << endl;
@@ -101,9 +109,15 @@ Student** addStudent(int & hashsize, Student** studenthash, int newhashsize, Stu
  studenthash = addtoHash(student, hashsize, studenthash, newhashsize, newstudenthash);
  return studenthash;
 }
-
+//adds random students
 Student** addRandom(int & hashsize, Student** studenthash, int newhashsize, Student** newstudenthash, int & randomid) {
+  ifstream iFile;
   int studentnum;
+  char firstnames[1000][1000];
+  char lastnames[1000][1000];
+  char buffer1[1000];
+  char buffer2[1000];
+  //gets info from users
   cout << "How many students do you want to add?" << endl;
   cin >> studentnum;
   int counter = 0;
@@ -122,24 +136,51 @@ Student** addRandom(int & hashsize, Student** studenthash, int newhashsize, Stud
   cout << "What is the name of your first name file?" << endl;
   cin >> fileFirst;
   cout << "What is the name of your last name file?" << endl;
-  cin >> fileLast[1000];
-  while (studentnum > counter) {
-    randomF = rand() % numFirst;
-    randomL = rand() % numLast;
-    Student* student = new Student();
-    randomGPA = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/4.5));
-    student->gpa = randomGPA;
-    student->id = randomid;
-    char testname [1000] = "test";
-    strcpy(student->firstname, testname);
-    strcpy(student->lastname, testname);
-    studenthash = addtoHash(student, hashsize, studenthash, newhashsize, newstudenthash);
-    randomid++;
-    counter++;
+  cin >> fileLast;
+  iFile.open(fileFirst);
+  int r = 0;
+  //array of firstnames created
+  while (iFile >> buffer1) {
+    for (int i = 0; buffer1[i] != '\0'; i++) {
+      firstnames[r][i] = buffer1[i];
+          }
+    r++;
   }
+  iFile.close();
+  
+  iFile.open(fileLast);
+ int s = 0;
+ //array of lastnames created
+  while (iFile >> buffer2) {
+    for (int i = 0; buffer2[i] != '\0'; i++) {
+      lastnames[s][i] = buffer2[i];
+       }
+    s++;
+
+  }
+  iFile.close();
+  
+     while (studentnum > counter) {
+       //gets a random number for first and last in correct range
+      randomF = rand() % numFirst;
+      randomL = rand() % numLast;
+      Student* student = new Student();
+      // gets random gpa from 0-4.5
+      randomGPA = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/4.5));
+      student->gpa = randomGPA;
+      //student id, incremented
+      student->id = randomid;
+      strcpy(student->firstname, firstnames[randomF]);
+      strcpy(student->lastname, lastnames[randomL]);
+      //cout << "Student: " << student->lastname << endl;
+      studenthash = addtoHash(student, hashsize, studenthash, newhashsize, newstudenthash); 
+      randomid++;
+      counter++;
+    }
+   return studenthash;
 }
 
-
+//doubles hash size, adds to temporary hash and then copies back to original hash
 Student** doubleHash(int & hashsize, int newhashsize, Student** studenthash, Student** newstudenthash) {
   newhashsize = hashsize * 2;
   newstudenthash = new Student*[newhashsize];
@@ -159,6 +200,7 @@ Student** doubleHash(int & hashsize, int newhashsize, Student** studenthash, Stu
   return studenthash;
 }
 
+//prints hash #, name, id, and gpa
 void printHash(int hashsize, Student** studenthash) {
   cout << "Number of slots: " << hashsize << endl;
   cout << "Slot First Last ID GPA" << endl;
@@ -170,7 +212,7 @@ void printHash(int hashsize, Student** studenthash) {
     }
   }
 }
-
+//gets info of student to delete
 Student** deleteStudent(int hashsize, Student** studenthash) {
   int studentid;
   cout << "Enter the id of the student that you want to delete" << endl;
@@ -178,7 +220,7 @@ Student** deleteStudent(int hashsize, Student** studenthash) {
   studenthash = removefromHash(studentid, hashsize, studenthash);
   return studenthash;
 }
-
+//removes a student from hash and linked list
 Student** removefromHash(int studentid, int hashsize, Student** studenthash) {
   int index = getHashIndex(studentid, hashsize);
   if (studenthash[index] == NULL) {
@@ -210,7 +252,7 @@ void getResponse(char response[10]) {
   cin >> response;
   running == true;
 }
-
+//main stores data and calls other functions
 int main() {
 char response[100];
  bool running = true;
